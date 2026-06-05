@@ -33,7 +33,13 @@ const ACCENT_DEEP = "#240507";
 const LOGO_FRACTION = 0.16; // of min(viewport w, h), as a height
 const DPR_CAP = 2;
 const RENDER_SCALE = 0.85; // render water below native res, upscale (perf)
-const MOBILE_MAX = 820; // px width treated as "mobile" -> fewer octaves
+// The water shader is fragment-bound (normals sample the height field 4x per
+// pixel, plus the ripple loop), so phones win most from drawing fewer pixels.
+// Tighter caps here roughly halve fragment work vs. the desktop path; the
+// surface is soft enough that the lower resolution is imperceptible.
+const MOBILE_DPR_CAP = 1.5;
+const MOBILE_RENDER_SCALE = 0.72;
+const MOBILE_MAX = 820; // px width below which the mobile resolution caps apply
 
 export interface Hero {
   destroy(): void;
@@ -52,6 +58,16 @@ export function mountHero(
 
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
+  ).matches;
+
+  // Touch devices (coarse pointer) get the cheaper shader path regardless of
+  // width — this catches landscape phones whose width exceeds MOBILE_MAX but
+  // whose GPUs still need the lighter load. canHover gates the logo "emerge"
+  // affordance, which only makes sense with a real hovering cursor; on touch
+  // the tap-ripple is the interaction instead.
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const canHover = window.matchMedia(
+    "(hover: hover) and (pointer: fine)"
   ).matches;
 
   let renderer: WebGLRenderer;
@@ -100,7 +116,6 @@ export function mountHero(
       ],
     },
     uReducedMotion: { value: reducedMotion ? 1 : 0 },
-    uQuality: { value: window.innerWidth > MOBILE_MAX ? 1 : 0 },
   };
 
   const material = new ShaderMaterial({
@@ -145,14 +160,23 @@ export function mountHero(
     uniforms.uLogoRect.value.set(0.5, 0.52, halfW, halfH);
   }
 
+  // Treat coarse-pointer devices (phones/tablets, including landscape phones
+  // wider than MOBILE_MAX) as mobile so they get the cheaper, lower-resolution
+  // path. Re-evaluated on resize so orientation changes are picked up.
+  function isMobile() {
+    return coarsePointer || window.innerWidth <= MOBILE_MAX;
+  }
+
   function resize() {
     const w = heroEl.clientWidth;
     const h = heroEl.clientHeight;
-    const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP) * RENDER_SCALE;
+    const mobile = isMobile();
+    const cap = mobile ? MOBILE_DPR_CAP : DPR_CAP;
+    const scale = mobile ? MOBILE_RENDER_SCALE : RENDER_SCALE;
+    const dpr = Math.min(window.devicePixelRatio || 1, cap) * scale;
     renderer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
     uniforms.uResolution.value.set(w * dpr, h * dpr);
-    uniforms.uQuality.value = window.innerWidth > MOBILE_MAX ? 1 : 0;
     layoutLogo();
   }
 
@@ -264,8 +288,9 @@ export function mountHero(
   resize();
   heroEl.classList.add("is-webgl");
   heroEl.addEventListener("pointerdown", onPointerDown, { passive: true });
-  if (!reducedMotion) {
-    // Logo emerge is a slow animation; skip it under reduced-motion.
+  if (!reducedMotion && canHover) {
+    // Logo emerge is a slow hover affordance: skip it under reduced-motion and
+    // on touch devices (where there's no hover and the tap-ripple stands in).
     heroEl.addEventListener("pointermove", onPointerMove, { passive: true });
     heroEl.addEventListener("pointerleave", onPointerLeave, { passive: true });
   }
