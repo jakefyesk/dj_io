@@ -9,14 +9,11 @@ interface Social {
   url: string;
 }
 
-const EMAIL = "bookings@io.example";
+const EMAIL = "jake.f.yesk.usa@gmail.com";
 
 const SOCIALS: Social[] = [
-  { key: "instagram", label: "Instagram", url: "https://instagram.com/" },
-  { key: "soundcloud", label: "SoundCloud", url: "https://soundcloud.com/" },
-  { key: "spotify", label: "Spotify", url: "https://open.spotify.com/" },
-  { key: "ra", label: "Resident Advisor", url: "https://ra.co/" },
-  { key: "bandcamp", label: "Bandcamp", url: "https://bandcamp.com/" },
+  { key: "instagram", label: "Instagram", url: "https://www.instagram.com/jake.f.yesk/" },
+  { key: "soundcloud", label: "SoundCloud", url: "https://soundcloud.com/iofficialaudio" },
 ];
 
 export function initContact(): void {
