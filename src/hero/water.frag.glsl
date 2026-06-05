@@ -18,7 +18,6 @@ uniform vec3  uPulseColor;     // the single chroma
 uniform vec3  uAccentDeep;     // pulse falloff color
 uniform float uLogoEmerge;     // 0 submerged -> 1 risen above the water
 uniform float uReducedMotion;  // 1.0 = freeze motion
-uniform float uQuality;        // 1.0 desktop, 0.0 mobile (fewer octaves)
 
 // Click ripples: each is (uv.x, uv.y, startTime). Inactive slots use a very
 // negative startTime so they read as long-expired and contribute nothing.
@@ -96,7 +95,12 @@ float fbm(vec2 p, float octaves) {
 // surface across the screen (which reads as "sliding"). A whisper of
 // residual drift keeps it from looking perfectly stationary.
 float waveHeight(vec2 p, float t) {
-  float octaves = mix(3.0, 5.0, uQuality);
+  // Octave count and the warp passes below define the wave *shape*, so they're
+  // fixed across all screen sizes — varying them by width made the swell scale
+  // jump visibly at the mobile breakpoint. Mobile performance is handled by
+  // rendering at a lower resolution (see hero.ts), which softens detail without
+  // changing how big the waves are.
+  float octaves = 5.0;
   vec2 sp = p * WAVE_SCALE;
 
   // Two slow, out-of-phase orbits advect the warp field. Because they loop
@@ -110,16 +114,13 @@ float waveHeight(vec2 p, float t) {
     fbm(sp + orbit2 + 5.2, octaves)
   );
 
-  // On desktop, feed the warp back into itself for a second, turbulent
-  // pass -> more evolving crest detail. Gated on the (uniform) quality
-  // flag so mobile keeps the cheaper single-warp path. The branch is
-  // uniform-coherent across all pixels, so it's effectively free.
-  if (uQuality > 0.5) {
-    warp = vec2(
-      fbm(sp + WARP_STRENGTH * warp + orbit2 * 0.6, octaves),
-      fbm(sp + WARP_STRENGTH * warp + orbit1 * 0.6 + 2.8, octaves)
-    );
-  }
+  // Feed the warp back into itself for a second, turbulent pass -> more
+  // evolving crest detail. Done on every device so the wave shape is identical
+  // regardless of screen width.
+  warp = vec2(
+    fbm(sp + WARP_STRENGTH * warp + orbit2 * 0.6, octaves),
+    fbm(sp + WARP_STRENGTH * warp + orbit1 * 0.6 + 2.8, octaves)
+  );
 
   vec2 drift = vec2(0.018, 0.012) * t;     // whisper of directional flow
   float h = fbm(sp + WARP_STRENGTH * warp + drift, octaves);

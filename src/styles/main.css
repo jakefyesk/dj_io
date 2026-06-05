@@ -113,7 +113,11 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-2) var(--gutter);
+  /* viewport-fit=cover lets content slide under the notch; keep the nav clear
+     of the safe-area insets on notched phones. */
+  padding: max(var(--space-2), env(safe-area-inset-top))
+    max(var(--gutter), env(safe-area-inset-right)) var(--space-2)
+    max(var(--gutter), env(safe-area-inset-left));
   pointer-events: none;
   opacity: 0;
   transform: translateY(-6px);
@@ -220,7 +224,7 @@ a {
 .hero__scrollcue {
   position: absolute;
   left: 50%;
-  bottom: clamp(1.5rem, 4vh, 2.75rem);
+  bottom: calc(clamp(1.5rem, 4vh, 2.75rem) + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   z-index: 2;
   color: var(--c-text-faint);
@@ -467,11 +471,14 @@ a {
   margin: 0;
 }
 .contact__email {
-  font-size: clamp(1.8rem, 6vw, 3.4rem);
+  font-size: clamp(1.35rem, 6vw, 3.4rem);
   font-weight: 600;
   letter-spacing: var(--tracking-tight);
   color: var(--c-text);
   position: relative;
+  /* keep long addresses from overflowing tiny screens */
+  max-width: 100%;
+  overflow-wrap: break-word;
   transition: color var(--dur) var(--ease);
 }
 .contact__email::after {
