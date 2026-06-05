@@ -1,0 +1,61 @@
+/* ------------------------------------------------------------------ *
+ * Design tokens — colors, type scale, spacing, motion.
+ * Restraint is the aesthetic: near-black base, soft off-white text,
+ * one accent (the pulse color).
+ * ------------------------------------------------------------------ */
+:root {
+  /* Base — near-black range */
+  --c-bg: #06080b;
+  --c-bg-raise: #0b0e14;
+  --c-surface: #0d1118;
+  --c-hairline: rgba(232, 236, 241, 0.08);
+  --c-hairline-strong: rgba(232, 236, 241, 0.14);
+
+  /* Text — never pure white for body */
+  --c-text: #e8ecf1;
+  --c-text-dim: rgba(232, 236, 241, 0.62);
+  --c-text-faint: rgba(232, 236, 241, 0.38);
+
+  /* Accent — the single chroma; the pulse color (provisional default).
+     Dark red: #D9243A crimson fading toward #240507. */
+  --c-accent: #d9243a;
+  --c-accent-deep: #240507;
+  --c-accent-glow: rgba(217, 36, 58, 0.5);
+
+  /* Type — one refined modern sans. System grotesque stack as a
+     dependency-free stand-in for Inter/Geist/Söhne. */
+  --font-sans: "Inter", "Geist", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+  --fs-label: 0.72rem; /* small uppercase labels */
+  --fs-body: 1rem;
+  --fs-lead: clamp(1.05rem, 1.6vw, 1.25rem);
+  --fs-h3: clamp(1.4rem, 3vw, 2rem);
+  --fs-h2: clamp(2rem, 5vw, 3.25rem);
+  --fs-display: clamp(2.75rem, 9vw, 6rem);
+
+  --tracking-label: 0.22em;
+  --tracking-tight: -0.02em;
+
+  /* Space — lean heavily on negative space */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2.5rem;
+  --space-5: 4rem;
+  --space-6: 6rem;
+  --space-7: 9rem;
+  --section-pad-block: clamp(5rem, 14vh, 11rem);
+  --gutter: clamp(1.25rem, 5vw, 4rem);
+  --max-content: 1180px;
+
+  /* Motion — slow, eased, deliberate. Nothing bounces. */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 240ms;
+  --dur: 480ms;
+  --dur-slow: 900ms;
+
+  --radius: 14px;
+  --radius-sm: 10px;
+}

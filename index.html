@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#06080b" />
+    <title>iO</title>
+    <meta
+      name="description"
+      content="iO — selected sets, events, and contact. Dark, moody electronic."
+    />
+    <link rel="icon" type="image/png" href="/src/assets/logo.png" />
+    <link rel="preload" as="image" href="/src/assets/logo.png" />
+  </head>
+  <body>
+    <a class="sr-only" href="#events">Skip to content</a>
+
+    <!-- Nav — nearly invisible, fades in after the hero -->
+    <nav class="nav" id="nav" aria-label="Primary">
+      <a class="nav__mark" href="#top">iO</a>
+      <div class="nav__links">
+        <a href="#events">Sets</a>
+        <a href="#contact">Contact</a>
+      </div>
+    </nav>
+
+    <main id="top">
+      <!-- ============================================================ -->
+      <!-- HERO — the centerpiece. Logo + pulse are composited inside    -->
+      <!-- the water shader (see src/hero), not stacked as DOM.          -->
+      <!-- ============================================================ -->
+      <section class="hero" id="hero" aria-label="iO">
+        <h1 class="sr-only">iO</h1>
+        <canvas class="hero__canvas" id="hero-canvas" aria-hidden="true"></canvas>
+
+        <!-- Static fallback: shown until/unless WebGL takes over. -->
+        <div class="hero__fallback" aria-hidden="true">
+          <img
+            class="hero__fallback-logo"
+            src="/src/assets/logo.png"
+            alt=""
+            width="132"
+            height="131"
+          />
+        </div>
+
+        <span class="hero__scrollcue" aria-hidden="true">Scroll</span>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- EVENTS CAROUSEL                                               -->
+      <!-- ============================================================ -->
+      <section class="section events" id="events" aria-labelledby="events-h">
+        <div class="wrap">
+          <header class="section__head reveal">
+            <span class="label">Selected sets</span>
+            <h2 id="events-h">Recent &amp; upcoming</h2>
+          </header>
+
+          <div class="embla reveal" id="embla">
+            <div class="embla__viewport" id="embla-viewport">
+              <ul class="embla__container" id="embla-container" role="list">
+                <!-- Cards injected by carousel.ts from placeholder data -->
+              </ul>
+            </div>
+
+            <div class="embla__controls">
+              <button class="embla__btn" id="embla-prev" type="button" aria-label="Previous events">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button class="embla__btn" id="embla-next" type="button" aria-label="Next events">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="embla__progress" aria-hidden="true">
+                <div class="embla__progress-bar" id="embla-progress"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- CONTACT                                                      -->
+      <!-- ============================================================ -->
+      <section class="section contact" id="contact" aria-labelledby="contact-h">
+        <div class="wrap contact__inner reveal">
+          <span class="label">Contact</span>
+          <h2 id="contact-h" class="sr-only">Contact</h2>
+          <p class="contact__tagline">For bookings, mixes, and everything in between.</p>
+          <a class="contact__email" id="contact-email" href="mailto:bookings@io.example"
+            >bookings@io.example</a
+          >
+          <nav class="contact__socials" aria-label="Social links">
+            <a href="#" data-social="instagram" rel="me noopener" target="_blank">Instagram</a>
+            <a href="#" data-social="soundcloud" rel="me noopener" target="_blank">SoundCloud</a>
+            <a href="#" data-social="spotify" rel="me noopener" target="_blank">Spotify</a>
+            <a href="#" data-social="ra" rel="me noopener" target="_blank">Resident Advisor</a>
+            <a href="#" data-social="bandcamp" rel="me noopener" target="_blank">Bandcamp</a>
+          </nav>
+        </div>
+        <footer class="footer">© <span id="year">2026</span> iO</footer>
+      </section>
+    </main>
+
+    <div class="grain" aria-hidden="true"></div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
