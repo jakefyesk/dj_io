@@ -7,12 +7,15 @@ import {
   Texture,
   TextureLoader,
   Vector2,
+  Vector3,
   Vector4,
   WebGLRenderer,
   SRGBColorSpace,
   LinearFilter,
   ClampToEdgeWrapping,
   Color,
+  DataTexture,
+  RGBAFormat,
 } from "three";
 
 import vertexShader from "./water.vert.glsl";
@@ -25,9 +28,9 @@ import logoUrl from "../assets/logo.png";
 const PULSE_COLOR = "#d9243a";
 const ACCENT_DEEP = "#240507";
 
-// Logo sizing: "tastefully small" — target ~10% of the shorter viewport
-// dimension. Half-size in UV is computed per-resize from the texture aspect.
-const LOGO_FRACTION = 0.1; // of min(viewport w, h), as a height
+// Logo sizing: as a fraction of the shorter viewport dimension (height).
+// Half-size in UV is computed per-resize from the texture aspect.
+const LOGO_FRACTION = 0.16; // of min(viewport w, h), as a height
 const DPR_CAP = 2;
 const RENDER_SCALE = 0.85; // render water below native res, upscale (perf)
 const MOBILE_MAX = 820; // px width treated as "mobile" -> fewer octaves
@@ -68,9 +71,14 @@ export function mountHero(
   const scene = new Scene();
   const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-  // Placeholder 1x1 texture until the logo loads, so the first frames are
-  // valid. The real logo swaps in on load.
-  const placeholder = new Texture();
+  // Placeholder 1x1 transparent texture until the logo loads, so the first
+  // frames sample a valid texture. The real logo swaps in on load.
+  const placeholder = new DataTexture(
+    new Uint8Array([0, 0, 0, 0]),
+    1,
+    1,
+    RGBAFormat
+  );
   placeholder.needsUpdate = true;
 
   const uniforms = {
@@ -80,7 +88,17 @@ export function mountHero(
     uLogoRect: { value: new Vector4(0.5, 0.52, 0.05, 0.05) },
     uPulseColor: { value: new Color(PULSE_COLOR) },
     uAccentDeep: { value: new Color(ACCENT_DEEP) },
-    uPointer: { value: new Vector2(0, 0) },
+    uLogoEmerge: { value: 0 }, // eases to 1 while the cursor is over the logo
+    // Click ripples: ring buffer of (uv.x, uv.y, startTime). Inactive slots
+    // start long-expired so they contribute nothing.
+    uRipples: {
+      value: [
+        new Vector3(0, 0, -1000),
+        new Vector3(0, 0, -1000),
+        new Vector3(0, 0, -1000),
+        new Vector3(0, 0, -1000),
+      ],
+    },
     uReducedMotion: { value: reducedMotion ? 1 : 0 },
     uQuality: { value: window.innerWidth > MOBILE_MAX ? 1 : 0 },
   };
@@ -138,30 +156,58 @@ export function mountHero(
     layoutLogo();
   }
 
-  // --- Pointer parallax (barely perceptible) ------------------------
-  const pointerTarget = new Vector2(0, 0);
-  function onPointer(e: PointerEvent) {
-    if (reducedMotion) return;
-    const x = (e.clientX / window.innerWidth) * 2 - 1;
-    const y = -((e.clientY / window.innerHeight) * 2 - 1);
-    pointerTarget.set(x, y);
+  // --- Click ripples ------------------------------------------------
+  // Each click drops one expanding ring into a small ring buffer; the
+  // shader animates and fades it from its recorded start time.
+  const ripples = uniforms.uRipples.value;
+  let nextRipple = 0;
+
+  function onPointerDown(e: PointerEvent) {
+    if (reducedMotion) return; // a ripple is motion; honor reduced-motion
+    const rect = heroEl.getBoundingClientRect();
+    const u = (e.clientX - rect.left) / rect.width;
+    const v = 1 - (e.clientY - rect.top) / rect.height; // y up to match uv
+    ripples[nextRipple].set(u, v, uniforms.uTime.value);
+    nextRipple = (nextRipple + 1) % ripples.length;
+    start(); // ensure the loop is running to animate it out
+  }
+
+  // --- Logo hover -> emerge -----------------------------------------
+  // While the cursor is over the logo, the mark slowly rises out of the
+  // water (shader uLogoEmerge); it re-submerges when the cursor leaves.
+  const LOGO_HIT = 1.7; // hit radius in logo-rect units (a bit generous)
+  let emergeTarget = 0;
+
+  function onPointerMove(e: PointerEvent) {
+    const rect = heroEl.getBoundingClientRect();
+    const u = (e.clientX - rect.left) / rect.width;
+    const v = 1 - (e.clientY - rect.top) / rect.height;
+    const r = uniforms.uLogoRect.value; // (cx, cy, halfW, halfH) in uv
+    const dx = (u - r.x) / r.z;
+    const dy = (v - r.y) / r.w;
+    emergeTarget = dx * dx + dy * dy < LOGO_HIT * LOGO_HIT ? 1 : 0;
+  }
+
+  function onPointerLeave() {
+    emergeTarget = 0; // re-submerge when the cursor leaves the hero
   }
 
   // --- RAF loop, paused when hero is out of view --------------------
   let raf = 0;
   let running = false;
   let startTime = performance.now();
-  let lastTime = startTime;
+  let lastNow = startTime;
 
   function frame(now: number) {
     if (!running) return;
-    const elapsed = (now - startTime) / 1000;
-    uniforms.uTime.value = elapsed;
+    uniforms.uTime.value = (now - startTime) / 1000;
 
-    // ease pointer toward target
-    const k = Math.min((now - lastTime) / 1000, 0.05) * 3;
-    uniforms.uPointer.value.lerp(pointerTarget, k);
-    lastTime = now;
+    // Slowly ease the logo emergence toward its target (~0.6s time constant).
+    const dt = Math.min((now - lastNow) / 1000, 0.05);
+    lastNow = now;
+    const ke = 1 - Math.exp(-dt / 0.6);
+    uniforms.uLogoEmerge.value +=
+      (emergeTarget - uniforms.uLogoEmerge.value) * ke;
 
     renderer.render(scene, camera);
 
@@ -176,7 +222,7 @@ export function mountHero(
   function start() {
     if (running) return;
     running = true;
-    lastTime = performance.now();
+    lastNow = performance.now();
     // keep the clock continuous across pauses
     startTime = performance.now() - uniforms.uTime.value * 1000;
     raf = requestAnimationFrame(frame);
@@ -217,7 +263,12 @@ export function mountHero(
   // --- Wire it up ---------------------------------------------------
   resize();
   heroEl.classList.add("is-webgl");
-  window.addEventListener("pointermove", onPointer, { passive: true });
+  heroEl.addEventListener("pointerdown", onPointerDown, { passive: true });
+  if (!reducedMotion) {
+    // Logo emerge is a slow animation; skip it under reduced-motion.
+    heroEl.addEventListener("pointermove", onPointerMove, { passive: true });
+    heroEl.addEventListener("pointerleave", onPointerLeave, { passive: true });
+  }
   document.addEventListener("visibilitychange", onVisibility);
   start();
 
@@ -226,7 +277,9 @@ export function mountHero(
       stop();
       io.disconnect();
       ro.disconnect();
-      window.removeEventListener("pointermove", onPointer);
+      heroEl.removeEventListener("pointerdown", onPointerDown);
+      heroEl.removeEventListener("pointermove", onPointerMove);
+      heroEl.removeEventListener("pointerleave", onPointerLeave);
       document.removeEventListener("visibilitychange", onVisibility);
       quad.geometry.dispose();
       material.dispose();
