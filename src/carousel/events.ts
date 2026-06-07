@@ -6,7 +6,10 @@ import imgWarehouse from "../assets/events/01-warehouse.svg";
 import imgPier from "../assets/events/02-pier.svg";
 import imgLoft from "../assets/events/03-loft.svg";
 import imgAtrium from "../assets/events/04-atrium.svg";
-import imgRooftop from "../assets/events/05-rooftop.svg";
+// `-web` files are downscaled (1000px) for fast loading; the full-res
+// `.jpeg` originals are kept in this folder as source.
+import imgBlockParty from "../assets/events/block-party-web.jpg";
+import imgGala2025 from "../assets/events/marshall-gala-2025-web.jpg";
 
 export interface IoEvent {
   image: string;
@@ -18,7 +21,13 @@ export interface IoEvent {
 
 export const events: IoEvent[] = [
   {
-    image: imgRooftop,
+    image: imgBlockParty,
+    title: "Block Party",
+    venue: "Lancaster, PA",
+    date: "June 2026",
+  },
+  {
+    image: imgGala2025,
     title: "Marshall Gala 2025",
     venue: "Rooftop · Philadelphia, PA",
     date: "Oct 2025",
