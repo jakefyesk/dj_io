@@ -471,14 +471,14 @@ a {
   margin: 0;
 }
 .contact__email {
-  font-size: clamp(1.35rem, 6vw, 3.4rem);
+  /* viewport-scaled so the address always fits on a single line */
+  font-size: clamp(0.95rem, 5.2vw, 3rem);
   font-weight: 600;
   letter-spacing: var(--tracking-tight);
   color: var(--c-text);
   position: relative;
-  /* keep long addresses from overflowing tiny screens */
   max-width: 100%;
-  overflow-wrap: break-word;
+  white-space: nowrap;
   transition: color var(--dur) var(--ease);
 }
 .contact__email::after {

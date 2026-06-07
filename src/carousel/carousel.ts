@@ -1,4 +1,5 @@
 import EmblaCarousel, { type EmblaCarouselType } from "embla-carousel";
+import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 import { events, type IoEvent } from "./events";
 
 // Builds a card's markup. Images are lazy (loading="lazy") and fade in on
@@ -45,14 +46,21 @@ export function initCarousel(): EmblaCarouselType | null {
     "(prefers-reduced-motion: reduce)"
   ).matches;
 
-  const embla = EmblaCarousel(viewport, {
-    loop: false,
-    align: "start",
-    dragFree: false,
-    containScroll: "trimSnaps",
-    duration: reducedMotion ? 0 : 26, // momentum feel; instant if reduced
-    skipSnaps: false,
-  });
+  const embla = EmblaCarousel(
+    viewport,
+    {
+      loop: false,
+      align: "start",
+      dragFree: false,
+      containScroll: "trimSnaps",
+      duration: reducedMotion ? 0 : 26, // momentum feel; instant if reduced
+      skipSnaps: false,
+    },
+    // Smooth trackpad horizontal scrolling. Responds to the dominant wheel
+    // axis, so a sideways trackpad swipe drives the carousel while a vertical
+    // wheel still scrolls the page; snaps to a slide when the gesture settles.
+    [WheelGesturesPlugin()]
+  );
 
   // --- Controls -----------------------------------------------------
   const prev = document.getElementById("embla-prev") as HTMLButtonElement | null;
